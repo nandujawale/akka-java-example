@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
@@ -16,7 +17,11 @@ import com.github.nandujawale.akkajava.Messages.LogMessageResult;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
+import akka.actor.SupervisorStrategy;
+import akka.japi.pf.DeciderBuilder;
+import scala.concurrent.duration.Duration;
 
 public class HAProxyLogAnalyzer extends AbstractActor {
 
@@ -26,6 +31,21 @@ public class HAProxyLogAnalyzer extends AbstractActor {
     private long processedLines;
 
     private ActorRef requestor = null;
+
+    private final SupervisorStrategy STRATEGY = new OneForOneStrategy(2,
+        Duration.create(1, TimeUnit.MINUTES),
+        false,
+        DeciderBuilder
+            .match(IllegalArgumentException.class, e -> {
+                processedLines++;
+                System.out.println("Restarting actor for " + e);
+                return SupervisorStrategy.restart();
+            })
+            .matchAny(o -> {
+                System.out.println("Cannot handle " + o + ", escalating...");
+                return SupervisorStrategy.escalate();
+            })
+            .build());
 
     @Override
     public Receive createReceive() {
@@ -39,6 +59,7 @@ public class HAProxyLogAnalyzer extends AbstractActor {
         String fileName = message.getFileName();
         List<String> lines = FileUtils.readLines(new File(fileName), StandardCharsets.UTF_8);
         totalLines = lines.size();
+        System.out.println("Total " + totalLines + " lines to analyze...");
 
         requestor = sender();
 
@@ -60,5 +81,10 @@ public class HAProxyLogAnalyzer extends AbstractActor {
         if (totalLines == processedLines) {
             requestor.tell(new LogAnalysisResult(analysisResult), self());
         }
+    }
+
+    @Override
+    public SupervisorStrategy supervisorStrategy() {
+        return STRATEGY;
     }
 }

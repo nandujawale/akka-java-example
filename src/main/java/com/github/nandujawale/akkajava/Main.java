@@ -24,20 +24,20 @@ public class Main {
 
         LogFile message = new LogFile("D:\\tmp\\haproxy.log");
 
-        Timeout timeout = new Timeout(10, TimeUnit.SECONDS);
-        // long time = -System.currentTimeMillis();
+        Timeout timeout = new Timeout(10, TimeUnit.MINUTES);
+        long time = -System.currentTimeMillis();
         Future<Object> future = Patterns.ask(analyzer, message, timeout);
         LogAnalysisResult result = (LogAnalysisResult)Await.result(future, timeout.duration());
-        // time += System.currentTimeMillis();
+        time += System.currentTimeMillis();
         printResult(result);
-        // System.out.println("\nTook " + time + " millisecs");
+        System.out.println("\nTook " + time + " millisecs");
 
         Await.result(system.terminate(), Duration.create(5, "seconds"));
     }
 
     private static void printResult(LogAnalysisResult result) {
         Map<String, Long> data = result.getData();
-        System.out.println("Result:");
+        System.out.println("\nResult:");
         data.entrySet().forEach(e -> System.out.println(e.getKey() + ": " + e.getValue()));
     }
 }

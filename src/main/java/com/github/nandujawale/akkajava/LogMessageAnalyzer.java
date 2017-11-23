@@ -17,6 +17,12 @@ public class LogMessageAnalyzer extends AbstractActor {
     private void onLogMessage(LogMessage message) {
         String data = message.getData();
         String ip = data.split(" ")[3].split(":")[0];
+
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) {
+            throw new IllegalArgumentException("Invalid IP (" + ip + ")");
+        }
+
         sender().tell(new LogMessageResult(ip), self());
     }
 }
