@@ -38,8 +38,8 @@ public class HAProxyLogAnalyzer extends AbstractActor {
         DeciderBuilder
             .match(IllegalArgumentException.class, e -> {
                 processedLines++;
-                System.out.println("Restarting actor for " + e);
-                return SupervisorStrategy.restart();
+                System.out.println("Stopping actor for " + e);
+                return SupervisorStrategy.stop();
             })
             .matchAny(o -> {
                 System.out.println("Cannot handle " + o + ", escalating...");
