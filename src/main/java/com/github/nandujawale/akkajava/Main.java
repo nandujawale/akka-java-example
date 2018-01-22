@@ -18,11 +18,14 @@ import scala.concurrent.duration.Duration;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            System.out.println("Usage: java -jar akka-java-example.jar <haproxy-log-file>");
+            System.exit(1);
+        }
         ActorSystem system = ActorSystem.create("HAProxyLogAnalysis");
-
         ActorRef analyzer = system.actorOf(Props.create(HAProxyLogAnalyzer.class), "HAProxyLogAnalyzer");
 
-        LogFile message = new LogFile("D:\\tmp\\haproxy.log");
+        LogFile message = new LogFile(args[0]);
 
         Timeout timeout = new Timeout(10, TimeUnit.MINUTES);
         long time = -System.currentTimeMillis();
